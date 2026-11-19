@@ -1,0 +1,120 @@
+:root {
+  font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--canvas);
+  color-scheme: light dark;
+
+  --paper: #fffefa;
+  --canvas: #f7f6f1;
+  --rail: #eeefe7;
+  --line: #d9dcd1;
+  --line-subtle: #e9ebe2;
+  --control-border-hover: #a3afa1;
+  --text: #242b25;
+  --muted: #556158;
+  --disabled-text: #717870;
+  --disabled-fill: #e8ebe2;
+  --accent: #285b42;
+  --primary-fill: #285b42;
+  --primary-hover: #1c4933;
+  --primary-text: #fff;
+  --category-selected: #e3ede4;
+  --category-selected-line: #ccdcd0;
+  --group-fill: #f0f2e9;
+  --row-hover: #f7f8f2;
+  --row-selected: #edf3e9;
+  --row-marker: #578267;
+  --amber: #78510b;
+  --danger: #8b3b32;
+  --notice-fill: #f6efd9;
+  --notice-line: #ded5b5;
+  --notice-text: #463d24;
+  --dialog-line: #aab4a6;
+  --dialog-shadow: #202b2533;
+  --backdrop: #27352955;
+  --mono: Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1e231f;
+    --canvas: #191d19;
+    --rail: #232923;
+    --line: #3a453b;
+    --line-subtle: #303930;
+    --control-border-hover: #748779;
+    --text: #e6ebe5;
+    --muted: #b5c1b7;
+    --disabled-text: #8d9b8f;
+    --disabled-fill: #282f29;
+    --accent: #a5dbb3;
+    --primary-fill: #a5dbb3;
+    --primary-hover: #bce8c7;
+    --primary-text: #17291e;
+    --category-selected: #2a3d30;
+    --category-selected-line: #43614b;
+    --group-fill: #252d26;
+    --row-hover: #252e27;
+    --row-selected: #28392c;
+    --row-marker: #89bb96;
+    --amber: #f0cb7f;
+    --danger: #ffab9e;
+    --notice-fill: #332c1b;
+    --notice-line: #635638;
+    --notice-text: #f2dfaa;
+    --dialog-line: #546457;
+    --dialog-shadow: #0009;
+    --backdrop: #0009;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; min-width: 320px; }
+h1, h2, p { margin: 0; }
+
+button, input, select, textarea {
+  color: inherit;
+  font: inherit;
+}
+
+button, input:not([type="checkbox"]), select, textarea {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+button {
+  min-height: 30px;
+  padding: 4px 9px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--control-border-hover);
+  background: var(--rail);
+}
+
+button:disabled { color: var(--disabled-text); cursor: default; }
+
+input:not([type="checkbox"]), select, textarea {
+  min-height: 34px;
+  padding: 5px 8px;
+}
+
+input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+summary { cursor: pointer; }

@@ -1,6 +1,6 @@
 # Installr
 
-Installr is a Windows desktop app for installing and updating software through WinGet. Its catalog includes 244 apps, with installed versions, available updates, and a queue you can review before it runs.
+Installr is a Windows desktop app for installing and updating software through WinGet. Its catalog includes 245 apps, with installed versions, available updates, and a queue you can review before it runs.
 
 The interface follows Windows light, dark, and contrast settings. While a batch runs, its progress also appears on the Windows taskbar.
 

@@ -142,7 +142,12 @@ function createInstallQueue({ inventory, journal, start = startCommand, onChange
         return { outcome: 'blocked', output: 'WinGet lists a newer version but does not offer it as an upgrade. Check your WinGet pins.' }
       }
       if (info.status === 'unknown' && !(options.includeUnknownVersions && info.canUpgradeUnknown)) {
-        return { outcome: 'blocked', output: 'WinGet could not confirm an eligible install or upgrade. Refresh the inventory and check the package source and installed version.' }
+        return {
+          outcome: 'blocked',
+          output: info.isInstalled
+            ? 'Windows reports this app as installed. WinGet could not confirm an applicable update.'
+            : 'WinGet could not confirm an eligible install or upgrade. Refresh the inventory and check the package source and installed version.',
+        }
       }
       action = info.isInstalled ? 'upgrade' : 'install'
     }

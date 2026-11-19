@@ -120,6 +120,7 @@ function parseRegistry(result) {
 function registryMatch(definition, entries) {
   const arch = /^Microsoft\.VCRedist\.2015\+\.(x86|x64)$/i.exec(definition.wingetId)?.[1]
   const names = (definition.registryNames || [definition.name]).map(normalize)
+  const publisher = definition.registryPublisher && normalize(definition.registryPublisher)
   const matches = entries.filter((entry) => {
     if (typeof entry.DisplayName !== 'string') return false
     const name = normalize(entry.DisplayName.trim())
@@ -128,7 +129,13 @@ function registryMatch(definition, entries) {
         /^microsoft visual c\+\+ (?:v14|2015(?:-20\d\d)?) redistributable/.test(name) &&
         name.includes(`(${arch})`)
     }
-    return names.includes(name)
+    if (names.includes(name)) return true
+    // Some installers append their exact DisplayVersion to the registered name.
+    // Require the catalog publisher for this fallback so editions and helpers stay distinct.
+    if (!publisher || typeof entry.Publisher !== 'string' || normalize(entry.Publisher.trim()) !== publisher) return false
+    const version = typeof entry.DisplayVersion === 'string' ? normalize(entry.DisplayVersion.trim()) : ''
+    const suffix = ' ' + version
+    return knownVersion(version) && name.endsWith(suffix) && names.includes(name.slice(0, -suffix.length).trimEnd())
   })
   const versions = new Set(matches.map((entry) => entry.DisplayVersion).filter((version) => typeof version === 'string'))
   return { found: matches.length > 0, version: versions.size === 1 ? [...versions][0] : null }

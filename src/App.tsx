@@ -12,6 +12,8 @@ import {
 import './App.css'
 
 const builtInApps = catalog.map((app): BuiltInApp => ({ ...app, kind: 'winget' }))
+const unranked = Number.MAX_SAFE_INTEGER
+const catalogPriority = (app: InstallApp) => app.kind === 'winget' ? app.priority ?? unranked : unranked
 const categoryOptions = [...new Set(builtInApps.map((app) => app.category)), 'Custom']
   .sort((a, b) => a.localeCompare(b))
 const statusLabels: Record<AppStatus, string> = {
@@ -50,6 +52,7 @@ function planLabel(definition: InstallApp, info: AppInfo | undefined, options: I
   if (info?.status === 'not-installed') return 'Install'
   if (info?.status === 'up-to-date') return 'No update reported'
   if (info?.status === 'update-blocked') return 'Upgrade blocked by WinGet'
+  if (info?.isInstalled) return 'Verify update with WinGet'
   return 'Check package'
 }
 
@@ -289,7 +292,9 @@ function App() {
       if (!groups.has(app.category)) groups.set(app.category, group)
       group.push(app)
     }
-    for (const list of groups.values()) list.sort((a, b) => a.name.localeCompare(b.name))
+    for (const list of groups.values()) {
+      list.sort((a, b) => (catalogPriority(a) - catalogPriority(b)) || a.name.localeCompare(b.name))
+    }
     return groups
   }, [apps, category, infoById, query, selected, status])
 
@@ -541,7 +546,7 @@ function App() {
                     {entries.map((entry) => {
                       const info = infoById.get(entry.id)
                       const state = info?.status ?? 'unknown'
-                      const statusLabel = state === 'unknown' && info?.isInstalled ? 'Installed · unverified' : statusLabels[state]
+                      const statusLabel = state === 'unknown' && info?.isInstalled ? 'Installed · update unverified' : statusLabels[state]
                       return (
                         <tr key={entry.id} className={selected.has(entry.id) ? 'selected-row' : undefined}>
                           <th scope="row">

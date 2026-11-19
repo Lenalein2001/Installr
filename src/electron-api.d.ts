@@ -5,6 +5,7 @@ export type BuiltInApp = {
   category: string
   wingetId: string
   source?: string
+  priority?: number
 }
 
 export type CustomApp = {

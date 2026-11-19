@@ -61,11 +61,33 @@ test('catalog IDs are unique and point to an allowed source', () => {
   assert(catalog.every((app) => packageId.test(app.wingetId) && (!app.source || app.source === 'msstore')))
 })
 
+test('catalog priorities are unique and rank Steam first in Games', () => {
+  const ranked = catalog.filter((app) => app.priority !== undefined)
+  assert(ranked.every((app) => Number.isSafeInteger(app.priority) && app.priority > 0))
+  assert.equal(new Set(ranked.map((app) => app.category + ':' + app.priority)).size, ranked.length)
+  assert.equal(ranked.find((app) => app.category === 'Games' && app.priority === 1)?.id, 'steam')
+})
+
 test('registry matches exact names and the specific Visual C++ architecture', () => {
   const entry = { DisplayName: 'Microsoft Visual C++ v14 Redistributable (x64) - 14.40', DisplayVersion: '14.40', Publisher: 'Microsoft Corporation' }
   assert.deepEqual(registryMatch({ ...example, wingetId: 'Microsoft.VCRedist.2015+.x64' }, [entry]), { found: true, version: '14.40' })
   assert.equal(registryMatch({ ...example, wingetId: 'Microsoft.VCRedist.2015+.x86' }, [entry]).found, false)
   assert.equal(registryMatch(example, [{ DisplayName: 'Example App Helper' }]).found, false)
+})
+
+test('versioned browser registrations match the exact edition and publisher', () => {
+  const gx = catalog.find((app) => app.id === 'operagx')
+  const opera = catalog.find((app) => app.id === 'opera')
+  const entry = { DisplayName: 'Opera GX Stable 139.0.6053.63', DisplayVersion: '139.0.6053.63', Publisher: 'Opera Software' }
+  const standard = { ...entry, DisplayName: 'Opera Stable 139.0.6053.63' }
+
+  assert.deepEqual(registryMatch(gx, [entry]), { found: true, version: entry.DisplayVersion })
+  assert.deepEqual(registryMatch(opera, [standard]), { found: true, version: standard.DisplayVersion })
+  assert.equal(registryMatch(opera, [entry]).found, false)
+  assert.equal(registryMatch(gx, [standard]).found, false)
+  assert.equal(registryMatch(gx, [{ ...entry, DisplayName: 'Opera GX Stable Helper 139.0.6053.63' }]).found, false)
+  assert.equal(registryMatch(gx, [{ ...entry, Publisher: 'Other publisher' }]).found, false)
+  assert.equal(registryMatch(gx, [{ ...entry, DisplayVersion: '139.0.6053.6' }]).found, false)
 })
 
 test('concurrent inventory requests share a bounded snapshot and cache hits start no processes', async () => {
@@ -171,6 +193,38 @@ function mockInventory(status = 'update-available') {
     invalidate() {},
   }
 }
+
+test('an unmatched Opera GX install stays visible and never starts a duplicate installer', async () => {
+  const gx = catalog.find((app) => app.id === 'operagx')
+  const arp = ok(
+    'Name                          ID                                  Version\r\n' +
+    '-'.repeat(79) + '\r\n' +
+    'Opera GX Stable 139.0.6053.63 ARP\\User\\X64\\Opera GX 139.0.6053.63 139.0.6053.63',
+  )
+  const installed = ok(JSON.stringify([
+    { DisplayName: 'Opera GX Stable 139.0.6053.63', DisplayVersion: '139.0.6053.63', Publisher: 'Opera Software' },
+  ]))
+  const inventory = createInventory({ run: async (file, args) => {
+    if (file !== winGet) return installed
+    return args.includes('--id') || args.includes('--upgrade-available') ? missing : arp
+  } })
+  const initial = await inventory.getAppsInfo([gx])
+  const resolved = await inventory.getAppsInfo([gx], undefined, true)
+  assert.equal(initial.checkingUnmatched, true)
+  assert.equal(resolved.checkingUnmatched, false)
+  assert.deepEqual(resolved.apps[0], {
+    id: 'operagx', status: 'unknown', isInstalled: true, currentVersion: '139.0.6053.63', remoteVersion: null,
+  })
+  assert.deepEqual(initial.apps, resolved.apps)
+
+  const queue = createInstallQueue({
+    inventory, journal: memoryJournal(),
+    start: () => assert.fail('An unmatched installation must not start an installer'),
+  })
+  const batch = await queue.install([gx], { includeUnknownVersions: true })
+  assert.equal(batch.jobs[0].result.outcome, 'blocked')
+  assert.match(batch.jobs[0].result.output, /Windows reports this app as installed/)
+})
 
 test('queue shares a preflight and runs the upgrade identified by the inventory', async () => {
   let reads = 0
